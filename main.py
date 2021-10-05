@@ -1,6 +1,6 @@
 import pygame
 import random
-
+import math
 # Initalize the pygame
 
 pygame.init()
@@ -18,6 +18,7 @@ icon = pygame.image.load('pikachu.png')
 pygame.display.set_icon(icon)
 
 # player
+score = 0
 playerImg = pygame.image.load('superhero.png')
 playerImg = pygame.transform.scale(playerImg, (32, 32))
 playerX = 100
@@ -36,12 +37,14 @@ enemyY_change = 0
 # laser
 laserImg = pygame.image.load('laser.png')
 laserImg = pygame.transform.scale(laserImg, (32, 32))
+laserImg = pygame.transform.rotate(laserImg, 90)
 laserX = playerX
 laserY = playerY
-laserX_change = 1
-laserY_change = 0
+laserX_change = 3
+laserY_change = 3
 # ready not visable fire, laser in motion
 laser_state = "ready"
+laser_direction = "right"
 
 # player on screen
 def player(x, y):
@@ -56,6 +59,19 @@ def fire_laser (x, y):
     laser_state = "fire"
     screen.blit(laserImg, (x + 16, y + 10))
 
+def isCollision(enemyX, enemyY, laserX, laserY):
+    distance = math.sqrt((math.pow(enemyX - laserX,2) )+ (math.pow(enemyY - laserY,2)))
+    if distance < 27:
+        return True
+    else:
+        return False
+
+def isDeath(enemyX, enemyY, playerX, playerY):
+    distance = math.sqrt((math.pow(enemyX - playerX,2) )+ (math.pow(enemyY - playerY,2)))
+    if distance < 30:
+        return True
+    else:
+        return False
 
 # game loop
 running = True
@@ -92,6 +108,18 @@ while running:
             if event.key == pygame.K_SPACE:
                 fire_laser(laserX, laserY)
 
+            if event.key == pygame.K_a:
+                laser_direction = 'left'
+
+            if event.key == pygame.K_s:
+                laser_direction = 'right'
+
+            if event.key == pygame.K_w:
+                laser_direction = 'up'
+
+            if event.key == pygame.K_x:
+                laser_direction = 'down'
+
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 print('Left')
@@ -119,7 +147,23 @@ while running:
 
     if laser_state == "fire":
         fire_laser(laserX, laserY)
-        laserX += laserX_change
+        if laser_direction == "right":
+            laserX += laserX_change
+        if laser_direction == "left":
+            laserX -= laserX_change
+        if laser_direction == "up":
+            laserY -= laserY_change
+        if laser_direction == "down":
+            laserY += laserY_change
+
+
+    if laserX >= 1200:
+        laser_state = "ready"
+
+    if laserX <= 0:
+        laser_state = "ready"
+
+
 
     # X boundaries for player
     if playerX <= 0:
@@ -145,7 +189,21 @@ while running:
     elif enemyY >= 868:
         enemyY = 868
 
+    # collision
+    collision = isCollision(enemyX,enemyY, laserX, laserY)
+    if collision:
+        laser_state = 'ready'
+        score += 1
+        print(score)
+        enemyX = random.randint(0, 1168)
+        enemyY = random.randint(50, 200)
 
+    # death
+    death = isDeath(enemyX, enemyY, playerX, playerY)
+    if death:
+        print("You lose")
+        playerX = random.randint(0, 1168)
+        playerY = random.randint(600, 800)
 
     player(playerX, playerY)
     enemy(enemyX, enemyY)
